@@ -26,16 +26,16 @@ axios.defaults.headers = { "x-api-key": API_KEY };
  * This function should execute immediately.
  */
 async function initialLoad() {
-  let config = {
-    headers: { "x-api-key": API_KEY },
-    onDownloadProgress: updateProgress,
-  };
-  const favourites = await getFavourites();
+  // let config = {
+  //   headers: { "x-api-key": API_KEY },
+  //   onDownloadProgress: updateProgress,
+  // };
+  //const favourites = await getFavourites();
 
   const response = await axios
     .get(" https://api.thecatapi.com/v1/breeds")
     .then(function (response) {
-      //      console.log(response.data);
+      console.log(response.data);
       response.data.forEach((breed) => {
         const option = document.createElement("option");
         option.setAttribute("value", breed.id);
@@ -50,9 +50,8 @@ async function initialLoad() {
       console.log("Success");
     });
 }
-
 initialLoad();
-handlerBreedSelection();
+//handlerBreedSelection();
 /**
  * 2. Create an event handler for breedSelect that does the following:
  * - Retrieve information on the selected breed from the cat API using fetch().
@@ -74,7 +73,7 @@ async function handlerBreedSelection() {
   //   headers: { "x-api-key": API_KEY },
   //   onDownloadProgress: updateProgress,
   // };
-  const favourites = getFavourites();
+  const favourites = await getFavourites();
 
   const response = await axios
     .get(
@@ -109,8 +108,8 @@ async function handlerBreedSelection() {
 axios.interceptors.request.use((request) => {
   request.metadata = request.metadata || {};
   request.metadata.startTime = new Date().getTime();
-  console.log("THERE IS A REQUEST!!!");
-  if (progressBar.style.width != "0%") {
+  //console.log("THERE IS A REQUEST!!!");
+  if (progressBar.style.width == "100%") {
     progressBar.style.width = "0%";
   }
   document.body.style.cursor = "progress";
@@ -122,7 +121,7 @@ axios.interceptors.response.use(
     response.config.metadata.endTime = new Date().getTime();
     response.config.metadata.durationInMS =
       response.config.metadata.endTime - response.config.metadata.startTime;
-    console.log("A response came in!");
+    //console.log("A response came in!");
 
     console.log(
       `Request took ${response.config.metadata.durationInMS} milliseconds.`,
@@ -159,12 +158,10 @@ axios.interceptors.response.use(
  */
 
 function updateProgress(progressEvent) {
-  console.log("Current proggress", progressEvent);
-
-  console.log("Here is the progress event", progressEvent);
-  if (progressEvent.loaded === progressEvent.total) {
-    progressBar.style.width = "100%";
-  }
+  //console.log("Current proggress", progressEvent);
+  const percentCompleted = (progressEvent.loaded / progressEvent.total) * 100;
+  //console.log(percentCompleted);
+  progressBar.style.width = percentCompleted + "%";
 }
 
 /**
@@ -185,40 +182,40 @@ function updateProgress(progressEvent) {
  */
 export async function favourite(imgId) {
   const heart = document.getElementById(imgId);
-  console.log("is this heart?", heart);
+  // console.log("is this heart?", heart);
 
   // your code here
   let favId;
   const favourites = await getFavourites();
   if (heart.className === "favourite-button-clicked") {
-    console.log("heart is red");
+    // console.log("heart is red");
     // heart.lastElementChild.classList.remove("favourite-button-clicked");
     // heart.lastElementChild.classList.add("favourite-button");
     heart.className = "favourite-button";
   } else {
-    console.log("jeart is pink");
+    // console.log("jeart is pink");
     //    heart.lastElementChild.style.color = "red";
     heart.className = "favourite-button-clicked";
   }
-  console.log("his is the imgId", imgId);
+  //console.log("his is the imgId", imgId);
   let favInfo = isFavourite(imgId, favourites);
 
   console.log("This is what you clicked on", imgId.target);
 
   if (favInfo[0]) {
-    console.log("Need To delete");
+    //console.log("Need To delete");
     const deleteFavourite = await axios.delete(
       `https://api.thecatapi.com/v1/favourites/${favInfo[1]}`,
     );
   } else {
     const favbtn = document.querySelector(".favourite-button");
-    console.log("Adding image to favorites");
+    // console.log("Adding image to favorites");
     const newFavorite = await axios.post(
       "https://api.thecatapi.com/v1/favourites",
       { image_id: imgId, sub_id: imgId + "12" },
     );
   }
-  console.log("There are your favourites", favourites);
+  //console.log("There are your favourites", favourites);
 }
 /**
  * 9. Test your favourite() function by creating a getFavourites() function.
@@ -246,7 +243,7 @@ function isFavourite(imgId, favourites) {
       break;
     }
   }
-  console.log("HERE IS THE RESULT OF ISFAVOURITE FUNCTION", isFavourite, favId);
+  //console.log("HERE IS THE RESULT OF ISFAVOURITE FUNCTION", isFavourite, favId);
   return [isFavourite, favId]; // returns arry with boolean and id of that favorite for deletion
 }
 
@@ -261,12 +258,19 @@ async function buildFavourites() {
 
 async function buildCarousel(response, favourites, breedName) {
   infoDump.innerHTML = "";
+  Carousel.clear();
   const breedInfo = await axios.get(
     `https://api.thecatapi.com/v1/images/search?breed_ids=${breedName}`,
   );
-  console.log(breedInfo.data);
   if (breedInfo.data.length > 0) {
-    console.log(breedInfo.data[0].breeds);
+    //console.log("Check out this object!" /*breedInfo.data[0].breeds*/);
+    for (let i in breedInfo.data[0].breeds[0]) {
+      //     console.log(i);
+    }
+    // console.log(
+    //   "This is the information",
+    //   Object.keys(breedInfo.data[0].breeds[0]).length,
+    // );
     infoDump.innerHTML = breedInfo.data[0].breeds[0].description;
     infoDump.innerHTML += "";
   } else {
@@ -275,14 +279,13 @@ async function buildCarousel(response, favourites, breedName) {
   if (breedName === "favourite") {
     infoDump.innerHTML = "Here are your favorite images";
   }
-  Carousel.clear();
-  console.log("1Here is the data", response);
+  // console.log("1Here is the data", response);
   response.forEach((cat) => {
     let carouselItem = Carousel.createCarouselItem(cat.url, "blah", cat.id);
     const favBtn = carouselItem.querySelector(".favourite-button");
     favBtn.setAttribute("id", cat.id);
     let favInfo = isFavourite(cat.id, favourites);
-    console.log("Is this cat a favorite?", favInfo[0]);
+    //  console.log("Is this cat a favorite?", favInfo[0]);
     if (favInfo[0]) {
       console.log("This cat is a favorite now it has a red heart");
       favBtn.className = "favourite-button-clicked";
