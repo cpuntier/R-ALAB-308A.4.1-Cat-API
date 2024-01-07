@@ -66,18 +66,14 @@ handlerBreedSelection();
 breedSelect.addEventListener("change", handlerBreedSelection);
 
 async function handlerBreedSelection() {
-  // let config = {
-  //   headers: { "x-api-key": API_KEY },
-  //   onDownloadProgress: updateProgress,
-  // };
   const favourites = await getFavourites();
 
   const response = await axios
     .get(
-      `https://api.thecatapi.com/v1/images/search?limit=10&breed_ids=${breedSelect.value}`
-    )
+      `https://api.thecatapi.com/v1/images/search?limit=10&breed_ids=${breedSelect.value}`,
+    ) //get request in order to populate drop down
     .then(function (response) {
-      buildCarousel(response.data, favourites, breedSelect.value);
+      buildCarousel(response.data, favourites, breedSelect.value); //build carousel function call
     })
     .catch(function (err) {
       console.log("There is a problem");
@@ -103,6 +99,7 @@ async function handlerBreedSelection() {
  * - As an added challenge, try to do this on your own without referencing the lesson material.
  */
 axios.interceptors.request.use((request) => {
+  // interceptors on request
   request.metadata = request.metadata || {};
   request.metadata.startTime = new Date().getTime();
   //console.log("THERE IS A REQUEST!!!");
@@ -114,14 +111,15 @@ axios.interceptors.request.use((request) => {
 });
 
 axios.interceptors.response.use(
+  //interceptor on response
   (response) => {
     response.config.metadata.endTime = new Date().getTime();
     response.config.metadata.durationInMS =
-      response.config.metadata.endTime - response.config.metadata.startTime;
+      response.config.metadata.endTime - response.config.metadata.startTime; //calculating time it takes for repsonse to happen
     //console.log("A response came in!");
 
     console.log(
-      `Request took ${response.config.metadata.durationInMS} milliseconds.`
+      `Request took ${response.config.metadata.durationInMS} milliseconds.`,
     );
     document.body.style.cursor = "";
     return response;
@@ -132,10 +130,10 @@ axios.interceptors.response.use(
       error.config.metadata.endTime - error.config.metadata.startTime;
 
     console.log(
-      `Request took ${error.config.metadata.durationInMS} milliseconds.`
+      `Request took ${error.config.metadata.durationInMS} milliseconds.`,
     );
     throw error;
-  }
+  },
 );
 
 /**
@@ -155,6 +153,7 @@ axios.interceptors.response.use(
  */
 
 function updateProgress(progressEvent) {
+  // updateProgress function in order to show display progress bar
   //console.log("Current proggress", progressEvent);
   const percentCompleted = (progressEvent.loaded / progressEvent.total) * 100;
   //console.log(percentCompleted);
@@ -178,38 +177,34 @@ function updateProgress(progressEvent) {
  * - You can call this function by clicking on the heart at the top right of any image.
  */
 export async function favourite(imgId) {
-  const heart = document.getElementById(imgId);
+  const heart = document.getElementById(imgId); // gets element attached to image used for favouriting
   // console.log("is this heart?", heart);
 
   // your code here
   let favId;
-  const favourites = await getFavourites();
+  const favourites = await getFavourites(); // get request for favourites
   if (heart.className === "favourite-button-clicked") {
     // console.log("heart is red");
-    // heart.lastElementChild.classList.remove("favourite-button-clicked");
-    // heart.lastElementChild.classList.add("favourite-button");
     heart.className = "favourite-button";
   } else {
-    // console.log("jeart is pink");
+    // console.log("heart is pink");
     //    heart.lastElementChild.style.color = "red";
     heart.className = "favourite-button-clicked";
   }
-  //console.log("his is the imgId", imgId);
   let favInfo = isFavourite(imgId, favourites);
-
-  console.log("This is what you clicked on", imgId.target);
 
   if (favInfo[0]) {
     //console.log("Need To delete");
     const deleteFavourite = await axios.delete(
-      `https://api.thecatapi.com/v1/favourites/${favInfo[1]}`
+      // delete request to api for deleting favs
+      `https://api.thecatapi.com/v1/favourites/${favInfo[1]}`,
     );
   } else {
-    const favbtn = document.querySelector(".favourite-button");
+    //    const favbtn = document.querySelector(".favourite-button");
     // console.log("Adding image to favorites");
     const newFavorite = await axios.post(
-      "https://api.thecatapi.com/v1/favourites",
-      { image_id: imgId, sub_id: imgId + "12" }
+      "https://api.thecatapi.com/v1/favourites", // post request for adding favorites
+      { image_id: imgId, sub_id: imgId + "12" },
     );
   }
   //console.log("There are your favourites", favourites);
@@ -231,6 +226,7 @@ async function getFavourites() {
 }
 
 function isFavourite(imgId, favourites) {
+  // checks if img id is in favourites already
   let isFavourite = false;
   let favId;
   for (let i in favourites) {
@@ -245,6 +241,7 @@ function isFavourite(imgId, favourites) {
 }
 
 async function buildFavourites() {
+  //builds carousel of favorited images
   const favourites = await getFavourites();
   const myFavourites = [];
   for (let i in favourites) {
@@ -254,14 +251,17 @@ async function buildFavourites() {
 }
 
 async function buildCarousel(response, favourites, breedName) {
+  //builds carousel
   infoDump.innerHTML = "";
   Carousel.clear();
   const breedInfo = await axios.get(
-    `https://api.thecatapi.com/v1/images/search?breed_ids=${breedName}`
+    // gets infor for info dump
+    `https://api.thecatapi.com/v1/images/search?breed_ids=${breedName}`,
   );
   if (breedInfo.data.length > 0) {
+    // if  there exists data do this
     //console.log("Check out this object!" /*breedInfo.data[0].breeds*/);
-    let tablerow = "";
+    let tablerow = ""; //makes table of all information obtained from api
     let breedInfoData = breedInfo.data[0].breeds[0];
     let breedInfoKeys = Object.keys(breedInfoData);
     infoDump.innerHTML = breedInfoData.description;
@@ -277,6 +277,7 @@ async function buildCarousel(response, favourites, breedName) {
         breedInfoKeys[i] != "country_code" //dont account for description of country code to minimize redundancy
       ) {
         if (breedInfoKeys[i] == "weight") {
+          // formats weight properly
           tablerow =
             "<tr><td>" +
             breedInfoKeys[i] +
@@ -303,13 +304,15 @@ async function buildCarousel(response, favourites, breedName) {
     infoDump.innerHTML += tableHTML;
     console.log(tableHTML);
   } else {
-    infoDump.innerHTML = "Sorry. No cats to show :[";
+    infoDump.innerHTML = "Sorry. No cats to show :["; // happens for malayan breed
   }
   if (breedName === "favourite") {
+    // if this function is called from getFavourites just display this text
     infoDump.innerHTML = "Here are your favorite images";
   }
   // console.log("1Here is the data", response);
   response.forEach((cat) => {
+    // builds carouselusing provided functions
     let carouselItem = Carousel.createCarouselItem(cat.url, "blah", cat.id);
     const favBtn = carouselItem.querySelector(".favourite-button");
     favBtn.setAttribute("id", cat.id);
