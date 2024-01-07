@@ -26,11 +26,7 @@ axios.defaults.headers = { "x-api-key": API_KEY };
  * This function should execute immediately.
  */
 async function initialLoad() {
-  // let config = {
-  //   headers: { "x-api-key": API_KEY },
-  //   onDownloadProgress: updateProgress,
-  // };
-  //const favourites = await getFavourites();
+  console.log("This is running now");
 
   const response = await axios
     .get(" https://api.thecatapi.com/v1/breeds")
@@ -49,9 +45,10 @@ async function initialLoad() {
     .finally(function () {
       console.log("Success");
     });
+  console.log("This finished running");
 }
 initialLoad();
-//handlerBreedSelection();
+handlerBreedSelection();
 /**
  * 2. Create an event handler for breedSelect that does the following:
  * - Retrieve information on the selected breed from the cat API using fetch().
@@ -77,7 +74,7 @@ async function handlerBreedSelection() {
 
   const response = await axios
     .get(
-      `https://api.thecatapi.com/v1/images/search?limit=10&breed_ids=${breedSelect.value}`,
+      `https://api.thecatapi.com/v1/images/search?limit=10&breed_ids=${breedSelect.value}`
     )
     .then(function (response) {
       buildCarousel(response.data, favourites, breedSelect.value);
@@ -124,7 +121,7 @@ axios.interceptors.response.use(
     //console.log("A response came in!");
 
     console.log(
-      `Request took ${response.config.metadata.durationInMS} milliseconds.`,
+      `Request took ${response.config.metadata.durationInMS} milliseconds.`
     );
     document.body.style.cursor = "";
     return response;
@@ -135,10 +132,10 @@ axios.interceptors.response.use(
       error.config.metadata.endTime - error.config.metadata.startTime;
 
     console.log(
-      `Request took ${error.config.metadata.durationInMS} milliseconds.`,
+      `Request took ${error.config.metadata.durationInMS} milliseconds.`
     );
     throw error;
-  },
+  }
 );
 
 /**
@@ -205,14 +202,14 @@ export async function favourite(imgId) {
   if (favInfo[0]) {
     //console.log("Need To delete");
     const deleteFavourite = await axios.delete(
-      `https://api.thecatapi.com/v1/favourites/${favInfo[1]}`,
+      `https://api.thecatapi.com/v1/favourites/${favInfo[1]}`
     );
   } else {
     const favbtn = document.querySelector(".favourite-button");
     // console.log("Adding image to favorites");
     const newFavorite = await axios.post(
       "https://api.thecatapi.com/v1/favourites",
-      { image_id: imgId, sub_id: imgId + "12" },
+      { image_id: imgId, sub_id: imgId + "12" }
     );
   }
   //console.log("There are your favourites", favourites);
@@ -260,19 +257,51 @@ async function buildCarousel(response, favourites, breedName) {
   infoDump.innerHTML = "";
   Carousel.clear();
   const breedInfo = await axios.get(
-    `https://api.thecatapi.com/v1/images/search?breed_ids=${breedName}`,
+    `https://api.thecatapi.com/v1/images/search?breed_ids=${breedName}`
   );
   if (breedInfo.data.length > 0) {
     //console.log("Check out this object!" /*breedInfo.data[0].breeds*/);
-    for (let i in breedInfo.data[0].breeds[0]) {
-      //     console.log(i);
+    let tablerow = "";
+    let breedInfoData = breedInfo.data[0].breeds[0];
+    let breedInfoKeys = Object.keys(breedInfoData);
+    infoDump.innerHTML = breedInfoData.description;
+    infoDump.innerHTML +=
+      "<br><br><h2>Here are some stats on the breed below</h2><h6>(Number ratings are on a scale of 0-5)</h6>";
+    infoDump.innerHTML += "<table>";
+    let tableHTML = "<table>";
+    for (let i in breedInfoKeys) {
+      console.log(breedInfoKeys[i]);
+      console.log(breedInfoData[breedInfoKeys[i]]);
+      if (
+        breedInfoKeys[i] != "description" &&
+        breedInfoKeys[i] != "country_code" //dont account for description of country code to minimize redundancy
+      ) {
+        if (breedInfoKeys[i] == "weight") {
+          tablerow =
+            "<tr><td>" +
+            breedInfoKeys[i] +
+            "</td><td> Imperial : " +
+            breedInfoData[breedInfoKeys[i]]["imperial"] +
+            " Metric: " +
+            breedInfoData[breedInfoKeys[i]]["metric"];
+          ("</td></tr>");
+          console.log(tablerow);
+          tableHTML += tablerow;
+        } else {
+          tablerow =
+            "<tr><td>" +
+            breedInfoKeys[i] +
+            "</td><td>" +
+            breedInfoData[breedInfoKeys[i]] +
+            "</td></tr>";
+          console.log(tablerow);
+          tableHTML += tablerow;
+        }
+      }
     }
-    // console.log(
-    //   "This is the information",
-    //   Object.keys(breedInfo.data[0].breeds[0]).length,
-    // );
-    infoDump.innerHTML = breedInfo.data[0].breeds[0].description;
-    infoDump.innerHTML += "";
+    tableHTML += "</table>";
+    infoDump.innerHTML += tableHTML;
+    console.log(tableHTML);
   } else {
     infoDump.innerHTML = "Sorry. No cats to show :[";
   }

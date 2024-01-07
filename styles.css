@@ -94,3 +94,7 @@ body {
     height: 17em;
   }
 }
+
+table tr td {
+  border: solid black 1px;
+}
